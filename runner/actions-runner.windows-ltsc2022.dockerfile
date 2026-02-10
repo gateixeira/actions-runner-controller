@@ -14,7 +14,7 @@ FROM mcr.microsoft.com/windows/servercore:ltsc2022
 
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
-ARG RUNNER_VERSION=2.321.0
+ARG RUNNER_VERSION=2.331.0
 ARG RUNNER_ARCH=x64
 
 LABEL org.opencontainers.image.title="GitHub Actions Runner (Windows)" \
