@@ -1,0 +1,46 @@
+## Example values for deploying Windows-based runners with ARC Runner Scale Sets.
+##
+## Prerequisites:
+##   - A Kubernetes cluster with Windows nodes (e.g., AKS with a Windows node pool)
+##   - ARC controller deployed on Linux nodes
+##   - A Windows runner container image (see docs/windows-runner-scale-sets.md)
+##
+## Usage:
+##   helm install windows-runner \
+##     --namespace arc-runners --create-namespace \
+##     --set githubConfigUrl="https://github.com/myorg" \
+##     --set githubConfigSecret=my-github-secret \
+##     -f ci/windows-values.yaml \
+##     oci://ghcr.io/actions/actions-runner-controller-charts/gha-runner-scale-set
+
+## NOTE: containerMode (dind, kubernetes) is NOT supported for Windows runners.
+## Windows runners must use the default mode with a custom container image.
+
+template:
+  spec:
+    ## Schedule runner pods on Windows nodes only
+    nodeSelector:
+      kubernetes.io/os: windows
+    containers:
+      - name: runner
+        image: ghcr.io/your-org/actions-runner-windows:ltsc2022
+        command: ["pwsh", "-Command"]
+        args:
+          - |
+            $jit = $env:ACTIONS_RUNNER_INPUT_JITCONFIG
+            if (-not $jit) { Write-Error 'ACTIONS_RUNNER_INPUT_JITCONFIG not set'; exit 1 }
+            Set-Location C:\actions-runner
+            & .\run.cmd --jitconfig $jit
+    ## Tolerate the Windows node taint (common on AKS/EKS/GKE)
+    tolerations:
+      - key: "node.kubernetes.io/os"
+        operator: "Equal"
+        value: "windows"
+        effect: "NoSchedule"
+
+## Ensure the listener pod (Linux binary) is scheduled on Linux nodes.
+## This is especially important on mixed-OS clusters.
+listenerTemplate:
+  spec:
+    nodeSelector:
+      kubernetes.io/os: linux

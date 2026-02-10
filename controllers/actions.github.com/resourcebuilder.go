@@ -244,6 +244,11 @@ func (b *ResourceBuilder) newScaleSetListenerPod(autoscalingListener *v1alpha1.A
 	terminationGracePeriodSeconds := int64(60)
 	podSpec := corev1.PodSpec{
 		ServiceAccountName: serviceAccount.Name,
+		// The listener is a Linux binary; ensure it is always scheduled on a Linux node.
+		// This prevents scheduling failures on mixed-OS clusters (e.g., with Windows node pools).
+		NodeSelector: map[string]string{
+			"kubernetes.io/os": "linux",
+		},
 		Containers: []corev1.Container{
 			{
 				Name:  autoscalingListenerContainerName,
@@ -359,7 +364,9 @@ func mergeListenerPodWithTemplate(pod *corev1.Pod, tmpl *corev1.PodTemplateSpec)
 	pod.Spec.TerminationGracePeriodSeconds = tmpl.Spec.TerminationGracePeriodSeconds
 	pod.Spec.ActiveDeadlineSeconds = tmpl.Spec.ActiveDeadlineSeconds
 	pod.Spec.DNSPolicy = tmpl.Spec.DNSPolicy
-	pod.Spec.NodeSelector = tmpl.Spec.NodeSelector
+	if tmpl.Spec.NodeSelector != nil {
+		pod.Spec.NodeSelector = tmpl.Spec.NodeSelector
+	}
 	pod.Spec.NodeName = tmpl.Spec.NodeName
 	pod.Spec.HostNetwork = tmpl.Spec.HostNetwork
 	pod.Spec.HostPID = tmpl.Spec.HostPID
