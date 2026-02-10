@@ -21,6 +21,9 @@ template:
     ## Schedule runner pods on Windows nodes only
     nodeSelector:
       kubernetes.io/os: windows
+    ## Pull secret for private GHCR images
+    imagePullSecrets:
+      - name: ghcr-creds
     containers:
       - name: runner
         image: ghcr.io/gateixeira/actions-runner-windows:2.321.0-ltsc2022
