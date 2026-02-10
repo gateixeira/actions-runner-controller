@@ -23,7 +23,7 @@ template:
       kubernetes.io/os: windows
     containers:
       - name: runner
-        image: ghcr.io/your-org/actions-runner-windows:ltsc2022
+        image: ghcr.io/gateixeira/actions-runner-windows:2.321.0-ltsc2022
         command: ["pwsh", "-Command"]
         args:
           - |
@@ -44,3 +44,4 @@ listenerTemplate:
   spec:
     nodeSelector:
       kubernetes.io/os: linux
+    containers: []
