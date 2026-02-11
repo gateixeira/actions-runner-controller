@@ -1,4 +1,13 @@
 {{- $hasCustomResourceMeta := (and .Values.resourceMeta .Values.resourceMeta.autoscalingRunnerSet) }}
+{{- $containerMode := default (dict) .Values.containerMode }}
+{{- /* Validate: containerMode dind/kubernetes are not supported with Windows runners */ -}}
+{{- if and .Values.template .Values.template.spec .Values.template.spec.nodeSelector }}
+  {{- if eq (get .Values.template.spec.nodeSelector "kubernetes.io/os") "windows" }}
+    {{- if or (eq $containerMode.type "dind") (eq $containerMode.type "kubernetes") (eq $containerMode.type "kubernetes-novolume") }}
+      {{- fail "containerMode 'dind', 'kubernetes', and 'kubernetes-novolume' are not supported with Windows runners. Remove containerMode or use the default mode." }}
+    {{- end }}
+  {{- end }}
+{{- end }}
 apiVersion: actions.github.com/v1alpha1
 kind: AutoscalingRunnerSet
 metadata:
