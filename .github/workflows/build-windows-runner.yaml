@@ -6,7 +6,7 @@ on:
       runner_version:
         description: "GitHub Actions runner version (e.g. 2.321.0)"
         required: true
-        default: "2.321.0"
+        default: "2.331.0"
       push_image:
         description: "Push image to GHCR"
         required: true
@@ -27,6 +27,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Log in to GHCR
         if: ${{ inputs.push_image }}
