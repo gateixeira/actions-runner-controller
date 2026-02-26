@@ -1,0 +1,55 @@
+name: Build Windows Runner Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner_version:
+        description: "GitHub Actions runner version (e.g. 2.321.0)"
+        required: true
+        default: "2.321.0"
+      push_image:
+        description: "Push image to GHCR"
+        required: true
+        type: boolean
+        default: false
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository_owner }}/actions-runner-windows
+  RUNNER_VERSION: ${{ inputs.runner_version }}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        if: ${{ inputs.push_image }}
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build Windows runner image
+        run: |
+          docker build `
+            --build-arg RUNNER_VERSION=${{ env.RUNNER_VERSION }} `
+            -t "${{ env.IMAGE_NAME }}:${{ env.RUNNER_VERSION }}-ltsc2022" `
+            -t "${{ env.IMAGE_NAME }}:ltsc2022" `
+            -t "${{ env.IMAGE_NAME }}:latest" `
+            -f runner/actions-runner.windows-ltsc2022.dockerfile `
+            runner/
+
+      - name: Verify image
+        run: |
+          docker inspect "${{ env.IMAGE_NAME }}:${{ env.RUNNER_VERSION }}-ltsc2022"
+          docker run --rm "${{ env.IMAGE_NAME }}:${{ env.RUNNER_VERSION }}-ltsc2022" pwsh -Command "Write-Host 'Image OK'; Get-ChildItem C:\actions-runner\run.cmd"
+
+      - name: Push image to GHCR
+        if: ${{ inputs.push_image }}
+        run: |
+          docker push "${{ env.IMAGE_NAME }}:${{ env.RUNNER_VERSION }}-ltsc2022"
+          docker push "${{ env.IMAGE_NAME }}:ltsc2022"
+          docker push "${{ env.IMAGE_NAME }}:latest"
